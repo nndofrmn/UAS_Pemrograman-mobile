@@ -3,8 +3,11 @@ import 'package:provider/provider.dart';
 
 import 'services/auth_service.dart';
 import 'services/product_service.dart';
+import 'services/database_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
+import 'providers/cart_provider.dart';
+import 'providers/order_provider.dart';
 import 'screens/splash_page.dart';
 import 'screens/auth/login_page.dart';
 import 'screens/auth/register_page.dart';
@@ -30,16 +33,64 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final authService = AuthService();
     final productService = ProductService();
+    final databaseService = DatabaseService();
 
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider(authService)),
         ChangeNotifierProvider(create: (_) => ProductProvider(productService)),
+        ChangeNotifierProvider(create: (_) => CartProvider(databaseService)),
+        ChangeNotifierProvider(create: (_) => OrderProvider(databaseService)),
       ],
       child: MaterialApp(
         title: kAppName,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: kPrimaryColor),
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: kPrimaryColor,
+            brightness: Brightness.light,
+          ),
+          scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+          appBarTheme: AppBarTheme(
+            elevation: 0,
+            centerTitle: true,
+            backgroundColor: kPrimaryColor,
+            foregroundColor: Colors.white,
+          ),
+          inputDecorationTheme: InputDecorationTheme(
+            filled: true,
+            fillColor: Colors.white,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: kPrimaryColor, width: 2),
+            ),
+            errorBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: kErrorColor),
+            ),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: kPrimaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          textButtonTheme: TextButtonThemeData(
+            style: TextButton.styleFrom(
+              foregroundColor: kPrimaryColor,
+            ),
+          ),
         ),
         initialRoute: '/',
         routes: {

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/user_model.dart';
+import '../../utils/constants.dart';
+import '../../utils/validation_helper.dart';
+import '../../widgets/modern_widgets.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,13 +16,23 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final _emailCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
   bool _loading = false;
   bool _remember = true;
-  String? _error;
+
+  @override
+  void dispose() {
+    _emailCtrl.dispose();
+    _passCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    const primaryColor = Color(0xFF6366F1);
+    const accentColor = Color(0xFF8B5CF6);
+    
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -30,61 +43,62 @@ class _LoginPageState extends State<LoginPage> {
             child: IntrinsicHeight(
               child: Column(
                 children: [
-                  // Header
+                  // Header with gradient
                   Container(
                     height: size.height * 0.32,
                     width: double.infinity,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [
-                          Theme.of(context).colorScheme.primary,
-                          Theme.of(context).colorScheme.primaryContainer,
-                        ],
+                        colors: [primaryColor, accentColor],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: const BorderRadius.only(
-                        bottomLeft: Radius.circular(24),
-                        bottomRight: Radius.circular(24),
+                      borderRadius: BorderRadius.only(
+                        bottomLeft: Radius.circular(32),
+                        bottomRight: Radius.circular(32),
                       ),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(20.0),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Spacer(),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white24,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.inventory_2,
-                                  size: 36,
-                                  color: Colors.white,
-                                ),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.3),
+                                width: 2,
                               ),
-                              const SizedBox(width: 12),
-                              const Text(
-                                'ThriftStock',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
+                            ),
+                            child: const Icon(
+                              Icons.shopping_bag_rounded,
+                              size: 36,
+                              color: Colors.white,
+                            ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
                           const Text(
-                            'Jual & kelola stok pakaian preloved dengan mudah',
-                            style: TextStyle(color: Colors.white70),
+                            'ThriftStock',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
                           ),
-                          const Spacer(),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Jual & kelola pakaian preloved',
+                            style: TextStyle(
+                              color: Colors.white70,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
                         ],
                       ),
                     ),
@@ -92,106 +106,86 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Form card
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20.0,
-                      vertical: 16,
-                    ),
-                    child: Card(
-                      elevation: 6,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            const SizedBox(height: 8),
-                            Text(
-                              'Masuk',
-                              style: Theme.of(context).textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 12),
-                            TextField(
-                              controller: _emailCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(Icons.email),
-                              ),
-                              keyboardType: TextInputType.emailAddress,
-                            ),
-                            const SizedBox(height: 8),
-                            TextField(
-                              controller: _passCtrl,
-                              decoration: const InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon: Icon(Icons.lock),
-                              ),
-                              obscureText: true,
-                            ),
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Checkbox(
-                                  value: _remember,
-                                  onChanged: (v) =>
-                                      setState(() => _remember = v ?? true),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            'Masuk ke Akun',
+                            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1E293B),
                                 ),
-                                const Text('Ingat saya'),
-                                const Spacer(),
-                                TextButton(
-                                  onPressed: () {},
-                                  child: const Text('Lupa password?'),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Silakan masukkan kredensial Anda',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: const Color(0xFF64748B),
                                 ),
-                              ],
-                            ),
-                            if (_error != null) ...[
-                              Text(
-                                _error!,
-                                style: const TextStyle(color: Colors.red),
+                          ),
+                          const SizedBox(height: 20),
+                          // Email field
+                          CustomInputField(
+                            hintText: 'nama@email.com',
+                            label: 'Email',
+                            controller: _emailCtrl,
+                            keyboardType: TextInputType.emailAddress,
+                            prefixIcon: Icons.email_rounded,
+                            validator: ValidationHelper.validateEmail,
+                          ),
+                          const SizedBox(height: 16),
+                          // Password field
+                          CustomInputField(
+                            hintText: 'Masukkan password',
+                            label: 'Password',
+                            controller: _passCtrl,
+                            isPassword: true,
+                            prefixIcon: Icons.lock_rounded,
+                            validator: ValidationHelper.validatePassword,
+                          ),
+                          const SizedBox(height: 16),
+                          // Remember me
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _remember,
+                                onChanged: (v) =>
+                                    setState(() => _remember = v ?? true),
                               ),
-                              const SizedBox(height: 8),
+                              const Text('Ingat saya'),
+                              const Spacer(),
+                              TextButton(
+                                onPressed: () {},
+                                child: Text(
+                                  'Lupa password?',
+                                  style: TextStyle(color: kPrimaryColor),
+                                ),
+                              ),
                             ],
-                            ElevatedButton(
-                              onPressed: _loading ? null : _onLogin,
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 14,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: _loading
-                                  ? const SizedBox(
-                                      height: 18,
-                                      width: 18,
-                                      child: CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : const Text('Masuk'),
+                          ),
+                          const SizedBox(height: 24),
+                          // Login button
+                          GradientButton(
+                            label: 'Masuk',
+                            isLoading: _loading,
+                            onPressed: _onLogin,
+                          ),
+                          const SizedBox(height: 16),
+                          // Register button
+                          OutlinedButton.icon(
+                            onPressed: () =>
+                                Navigator.pushNamed(context, '/register'),
+                            icon: const Icon(Icons.person_add_rounded),
+                            label: const Text('Buat Akun Baru'),
+                            style: OutlinedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              side: const BorderSide(color: Color(0xFF6366F1), width: 2),
                             ),
-                            const SizedBox(height: 8),
-                            OutlinedButton(
-                              onPressed: () =>
-                                  Navigator.pushNamed(context, '/register'),
-                              child: const Text('Daftar Akun'),
-                            ),
-                            const SizedBox(height: 12),
-                            const Divider(),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Akun demo: admin@example.com / admin123\nuser@example.com / user123',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.black54,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
@@ -199,40 +193,61 @@ class _LoginPageState extends State<LoginPage> {
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12.0),
                     child: Text(
-                      '© ThriftStock - Demo UAS',
-                      style: TextStyle(color: Colors.grey.shade600),
+                      '© ThriftStock 2024',
+                      style: TextStyle(
+                        color: const Color(0xFF94A3B8),
+                        fontSize: 12,
+                      ),
                     ),
                   ),
                 ],
-              ), // Column
-            ), // IntrinsicHeight
-          ), // ConstrainedBox
-        ), // SingleChildScrollView
-      ), // SafeArea
-    ); // Scaffold
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   void _onLogin() async {
-    setState(() {
-      _loading = true;
-      _error = null;
-    });
-    final success = await context.read<AuthProvider>().signIn(
-      _emailCtrl.text.trim(),
-      _passCtrl.text.trim(),
-    );
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (!success) {
-      setState(() => _error = 'Login gagal — periksa email/password');
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
-    final user = context.read<AuthProvider>().user!;
-    if (user.role == UserRole.admin) {
-      Navigator.pushReplacementNamed(context, '/admin');
-    } else {
-      Navigator.pushReplacementNamed(context, '/user');
+    setState(() => _loading = true);
+
+    try {
+      final success = await context.read<AuthProvider>().signIn(
+            _emailCtrl.text.trim(),
+            _passCtrl.text.trim(),
+          );
+
+      if (!mounted) return;
+
+      if (!success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Email atau password salah'),
+            backgroundColor: kErrorColor,
+          ),
+        );
+        setState(() => _loading = false);
+        return;
+      }
+
+      final user = context.read<AuthProvider>().user!;
+      if (user.role == UserRole.admin) {
+        Navigator.pushReplacementNamed(context, '/admin');
+      } else {
+        Navigator.pushReplacementNamed(context, '/user');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: kErrorColor,
+        ),
+      );
+      setState(() => _loading = false);
     }
   }
 }
