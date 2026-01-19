@@ -1,22 +1,32 @@
 import 'package:flutter/material.dart';
-import '../services/database_service.dart';
+import '../models/order_model.dart';
+import '../services/order_service.dart';
+import '../services/auth_service.dart';
 
 class OrderProvider extends ChangeNotifier {
-  final DatabaseService _dbService;
-  List<Map<String, dynamic>> _orders = [];
+  final OrderService _orderService;
+  final AuthService _authService;
+  List<Order> _orders = [];
   bool _isLoading = false;
+  String _error = '';
 
-  OrderProvider(this._dbService);
+  OrderProvider(this._orderService, this._authService);
 
-  List<Map<String, dynamic>> get orders => _orders;
+  List<Order> get orders => _orders;
   bool get isLoading => _isLoading;
+  String get error => _error;
 
-  Future<void> loadUserOrders(String userId) async {
+  Future<void> loadUserOrders() async {
+    if (_authService.token == null) return;
+
     _isLoading = true;
+    _error = '';
     notifyListeners();
+
     try {
-      _orders = await _dbService.getUserOrders(userId);
+      _orders = await _orderService.getUserOrders(_authService.token!);
     } catch (e) {
+      _error = e.toString();
       print('Error loading orders: $e');
     } finally {
       _isLoading = false;
@@ -24,20 +34,48 @@ class OrderProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> createOrder(String userId, List<Map<String, dynamic>> cartItems, int totalPrice) async {
+  Future<Order?> createOrder(List<Map<String, dynamic>> cartItems) async {
+    if (_authService.token == null) return null;
+
     try {
-      final orderId = 'order_${DateTime.now().millisecondsSinceEpoch}';
-      await _dbService.insertOrder(
-        orderId,
-        userId,
-        totalPrice,
-        'pending',
-        DateTime.now().toIso8601String(),
-        cartItems.toString(),
-      );
-      await loadUserOrders(userId);
+      final order = await _orderService.createOrder(cartItems, _authService.token!);
+      if (order != null) {
+        await loadUserOrders(); // Refresh orders list
+      }
+      return order;
     } catch (e) {
+      _error = e.toString();
       print('Error creating order: $e');
+      notifyListeners();
+      return null;
+    }
+  }
+
+  Future<Order?> getOrderById(String id) async {
+    if (_authService.token == null) return null;
+
+    try {
+      return await _orderService.getOrderById(id, _authService.token!);
+    } catch (e) {
+      _error = e.toString();
+      print('Error getting order: $e');
+      return null;
+    }
+  }
+
+  Future<bool> cancelOrder(String id) async {
+    if (_authService.token == null) return false;
+
+    try {
+      final success = await _orderService.cancelOrder(id, _authService.token!);
+      if (success) {
+        await loadUserOrders(); // Refresh orders list
+      }
+      return success;
+    } catch (e) {
+      _error = e.toString();
+      print('Error cancelling order: $e');
+      return false;
     }
   }
 }

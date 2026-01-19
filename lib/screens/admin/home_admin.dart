@@ -315,21 +315,7 @@ class _HomeAdminState extends State<HomeAdmin> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline),
-                      onPressed: () =>
-                          context.read<ProductProvider>().updateStock(p.id, -1),
-                    ),
-                    Text('Stok: ${p.stock}'),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      onPressed: () =>
-                          context.read<ProductProvider>().updateStock(p.id, 1),
-                    ),
-                  ],
-                ),
+                Text('Stok: ${p.stock}'),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -363,7 +349,7 @@ class _HomeAdminState extends State<HomeAdmin> {
                           ),
                         );
                         if (yes == true) {
-                          prov.delete(p.id);
+                          prov.deleteProduct(p.id);
                         }
                       },
                     ),

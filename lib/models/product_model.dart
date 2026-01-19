@@ -33,6 +33,8 @@ class Product {
     imagePath: map['imagePath'] as String?,
   );
 
+  factory Product.fromJson(Map<String, dynamic> json) => Product.fromMap(json);
+
   Map<String, dynamic> toMap() => {
     'id': id,
     'name': name,

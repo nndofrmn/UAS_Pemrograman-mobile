@@ -20,6 +20,8 @@ class AppUser {
     role: m['role'] == 'admin' ? UserRole.admin : UserRole.user,
   );
 
+  factory AppUser.fromJson(Map<String, dynamic> json) => AppUser.fromMap(json);
+
   Map<String, dynamic> toMap() => {
     'id': id,
     'name': name,

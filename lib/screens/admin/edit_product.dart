@@ -124,7 +124,7 @@ class _EditProductState extends State<EditProduct> {
     );
   }
 
-  void _onSave() {
+  Future<void> _onSave() async {
     final updated = Product(
       id: p.id,
       name: _name.text.trim(),
@@ -136,8 +136,15 @@ class _EditProductState extends State<EditProduct> {
       imageUrl: _image.text.trim().isEmpty ? null : _image.text.trim(),
       imagePath: _pickedImagePath,
     );
-    context.read<ProductProvider>().update(updated);
-    Navigator.pop(context);
+
+    final success = await context.read<ProductProvider>().updateProduct(updated);
+    if (success) {
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal mengupdate produk')),
+      );
+    }
   }
 
   Future<void> _pickImage() async {

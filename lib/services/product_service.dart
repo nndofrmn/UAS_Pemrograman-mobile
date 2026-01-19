@@ -1,135 +1,136 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/product_model.dart';
+import 'auth_service.dart';
 
-/// In-memory product service with simple CRUD for demo/UAS.
 class ProductService {
-  final List<Product> _items = [
-    Product(
-      id: 'p1',
-      name: 'Kaos Vintage',
-      category: 'Kaos',
-      size: 'M',
-      stock: 5,
-      price: 70000,
-      description: 'Kaos vintage berkualitas',
-      imageUrl: 'https://picsum.photos/seed/p1/400/400',
-    ),
-    Product(
-      id: 'p2',
-      name: 'Jaket Denim',
-      category: 'Jaket',
-      size: 'L',
-      stock: 2,
-      price: 150000,
-      description: 'Jaket denim second but in great condition',
-      imageUrl: 'https://picsum.photos/seed/p2/400/400',
-    ),
-    Product(
-      id: 'p3',
-      name: 'Celana Chino',
-      category: 'Celana',
-      size: 'M',
-      stock: 8,
-      price: 90000,
-      description: 'Celana chino warna khaki, nyaman dipakai sehari-hari',
-      imageUrl: 'https://picsum.photos/seed/p3/400/400',
-    ),
-    Product(
-      id: 'p4',
-      name: 'Sweater Rajut',
-      category: 'Sweater',
-      size: 'L',
-      stock: 4,
-      price: 120000,
-      description: 'Sweater rajut hangat, cocok untuk cuaca dingin',
-      imageUrl: 'https://picsum.photos/seed/p4/400/400',
-    ),
-    Product(
-      id: 'p5',
-      name: 'Kemeja Flanel',
-      category: 'Kemeja',
-      size: 'XL',
-      stock: 6,
-      price: 110000,
-      description: 'Kemeja flanel motif kotak-kotak, kondisi bagus',
-      imageUrl: 'https://picsum.photos/seed/p5/400/400',
-    ),
-    Product(
-      id: 'p6',
-      name: 'Rok Plisket',
-      category: 'Rok',
-      size: 'S',
-      stock: 3,
-      price: 80000,
-      description: 'Rok plisket feminin, cocok untuk berbagai acara',
-      imageUrl: 'https://picsum.photos/seed/p6/400/400',
-    ),
-    Product(
-      id: 'p7',
-      name: 'Top Tank',
-      category: 'Kaos',
-      size: 'S',
-      stock: 10,
-      price: 45000,
-      description: 'Tank top simpel, cocok untuk layering',
-      imageUrl: 'https://picsum.photos/seed/p7/400/400',
-    ),
-    Product(
-      id: 'p8',
-      name: 'Blazer Bekas',
-      category: 'Jaket',
-      size: 'M',
-      stock: 1,
-      price: 200000,
-      description: 'Blazer formal second, kondisi rapi',
-      imageUrl: 'https://picsum.photos/seed/p8/400/400',
-    ),
-    Product(
-      id: 'p9',
-      name: 'Hoodie Oversize',
-      category: 'Hoodie',
-      size: 'XL',
-      stock: 7,
-      price: 140000,
-      description: 'Hoodie nyaman dengan saku depan',
-      imageUrl: 'https://picsum.photos/seed/p9/400/400',
-    ),
-    Product(
-      id: 'p10',
-      name: 'Celana Jeans',
-      category: 'Celana',
-      size: 'L',
-      stock: 5,
-      price: 130000,
-      description: 'Jeans biru tua, potongan straight',
-      imageUrl: 'https://picsum.photos/seed/p10/400/400',
-    ),
-  ];
+  final AuthService _authService;
+  static const String _baseUrl = 'http://localhost:3001/api/products';
 
-  List<Product> getAll() => List.unmodifiable(_items);
+  ProductService(this._authService);
 
-  Product? getById(String id) {
+  /// Get all products
+  Future<List<Product>> getAll() async {
     try {
-      return _items.firstWhere((p) => p.id == id);
-    } catch (_) {
-      return null;
+      final response = await http.get(Uri.parse(_baseUrl));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Product.fromJson(json)).toList();
+      }
+    } catch (e) {
+      print('Get all products error: $e');
     }
+    return [];
   }
 
-  void add(Product product) {
-    _items.add(product);
+  /// Get product by ID
+  Future<Product?> getById(String id) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/$id'));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return Product.fromJson(data);
+      }
+    } catch (e) {
+      print('Get product by id error: $e');
+    }
+    return null;
   }
 
-  void update(Product product) {
-    final idx = _items.indexWhere((p) => p.id == product.id);
-    if (idx >= 0) _items[idx] = product;
+  /// Search products
+  Future<List<Product>> search(String query) async {
+    try {
+      final response = await http.get(Uri.parse('$_baseUrl/search?q=$query'));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => Product.fromJson(json)).toList();
+      }
+    } catch (e) {
+      print('Search products error: $e');
+    }
+    return [];
   }
 
-  void delete(String id) {
-    _items.removeWhere((p) => p.id == id);
+  /// Create new product (admin only)
+  Future<Product?> create(Product product) async {
+    if (_authService.token == null) return null;
+
+    try {
+      final response = await http.post(
+        Uri.parse(_baseUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_authService.token}',
+        },
+        body: jsonEncode({
+          'name': product.name,
+          'category': product.category,
+          'size': product.size,
+          'stock': product.stock,
+          'price': product.price,
+          'description': product.description,
+          'imageUrl': product.imageUrl,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return Product.fromJson(data);
+      }
+    } catch (e) {
+      print('Create product error: $e');
+    }
+    return null;
   }
 
-  void updateStock(String id, int delta) {
-    final p = getById(id);
-    if (p != null) p.stock = (p.stock + delta).clamp(0, 999999);
+  /// Update product (admin only)
+  Future<bool> update(Product product) async {
+    if (_authService.token == null) return false;
+
+    try {
+      final response = await http.put(
+        Uri.parse('$_baseUrl/${product.id}'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${_authService.token}',
+        },
+        body: jsonEncode({
+          'name': product.name,
+          'category': product.category,
+          'size': product.size,
+          'stock': product.stock,
+          'price': product.price,
+          'description': product.description,
+          'imageUrl': product.imageUrl,
+        }),
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Update product error: $e');
+    }
+    return false;
+  }
+
+  /// Delete product (admin only)
+  Future<bool> delete(String id) async {
+    if (_authService.token == null) return false;
+
+    try {
+      final response = await http.delete(
+        Uri.parse('$_baseUrl/$id'),
+        headers: {
+          'Authorization': 'Bearer ${_authService.token}',
+        },
+      );
+
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Delete product error: $e');
+    }
+    return false;
   }
 }

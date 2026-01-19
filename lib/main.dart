@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import 'services/auth_service.dart';
 import 'services/product_service.dart';
+import 'services/order_service.dart';
 import 'services/database_service.dart';
 import 'providers/auth_provider.dart';
 import 'providers/product_provider.dart';
@@ -32,7 +33,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authService = AuthService();
-    final productService = ProductService();
+    final productService = ProductService(authService);
+    final orderService = OrderService();
     final databaseService = DatabaseService();
 
     return MultiProvider(
@@ -40,7 +42,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider(authService)),
         ChangeNotifierProvider(create: (_) => ProductProvider(productService)),
         ChangeNotifierProvider(create: (_) => CartProvider(databaseService)),
-        ChangeNotifierProvider(create: (_) => OrderProvider(databaseService)),
+        ChangeNotifierProvider(create: (_) => OrderProvider(orderService, authService)),
       ],
       child: MaterialApp(
         title: kAppName,

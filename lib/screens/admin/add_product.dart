@@ -113,10 +113,9 @@ class _AddProductState extends State<AddProduct> {
     );
   }
 
-  void _onAdd() {
-    final id = DateTime.now().millisecondsSinceEpoch.toString();
+  Future<void> _onAdd() async {
     final p = Product(
-      id: id,
+      id: '', // Backend will generate ID
       name: _name.text.trim(),
       category: _cat.text.trim(),
       size: _size.text.trim(),
@@ -126,8 +125,15 @@ class _AddProductState extends State<AddProduct> {
       imageUrl: _image.text.trim().isEmpty ? null : _image.text.trim(),
       imagePath: _pickedImagePath,
     );
-    context.read<ProductProvider>().add(p);
-    Navigator.pop(context);
+
+    final success = await context.read<ProductProvider>().addProduct(p);
+    if (success) {
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menambah produk')),
+      );
+    }
   }
 
   Future<void> _pickImage() async {

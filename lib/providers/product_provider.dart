@@ -4,16 +4,23 @@ import '../services/product_service.dart';
 
 class ProductProvider with ChangeNotifier {
   final ProductService _service;
+  List<Product> _items = [];
+  bool _isLoading = false;
+  String _error = '';
   String _query = '';
   String _category = 'All';
 
-  ProductProvider(this._service);
+  ProductProvider(this._service) {
+    loadProducts();
+  }
 
-  List<Product> get items => _service.getAll();
+  List<Product> get items => _items;
+  bool get isLoading => _isLoading;
+  String get error => _error;
 
   List<String> get categories {
     final set = <String>{'All'};
-    for (final p in items) {
+    for (final p in _items) {
       set.add(p.category);
     }
     final list = set.toList();
@@ -24,7 +31,7 @@ class ProductProvider with ChangeNotifier {
   /// Products filtered by current query (name, description, category)
   List<Product> get filteredItems {
     final q = _query.trim().toLowerCase();
-    return items.where((p) {
+    return _items.where((p) {
       if (_category != 'All' && p.category != _category) return false;
       if (q.isEmpty) return true;
       final name = p.name.toLowerCase();
@@ -57,23 +64,85 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  void add(Product p) {
-    _service.add(p);
+  Future<void> loadProducts() async {
+    _isLoading = true;
+    _error = '';
     notifyListeners();
+
+    try {
+      _items = await _service.getAll();
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void update(Product p) {
-    _service.update(p);
+  Future<void> searchProducts(String query) async {
+    _isLoading = true;
+    _error = '';
     notifyListeners();
+
+    try {
+      _items = await _service.search(query);
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  void delete(String id) {
-    _service.delete(id);
-    notifyListeners();
+  Future<bool> addProduct(Product product) async {
+    try {
+      final result = await _service.create(product);
+      if (result != null) {
+        await loadProducts(); // Refresh the list
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+    return false;
   }
 
-  void updateStock(String id, int delta) {
-    _service.updateStock(id, delta);
-    notifyListeners();
+  Future<bool> updateProduct(Product product) async {
+    try {
+      final success = await _service.update(product);
+      if (success) {
+        await loadProducts(); // Refresh the list
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+    return false;
+  }
+
+  Future<bool> deleteProduct(String id) async {
+    try {
+      final success = await _service.delete(id);
+      if (success) {
+        await loadProducts(); // Refresh the list
+        return true;
+      }
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+    }
+    return false;
+  }
+
+  Future<Product?> getProductById(String id) async {
+    try {
+      return await _service.getById(id);
+    } catch (e) {
+      _error = e.toString();
+      notifyListeners();
+      return null;
+    }
   }
 }
